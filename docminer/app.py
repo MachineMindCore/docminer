@@ -21,7 +21,7 @@ os.makedirs(DATA_DIR, exist_ok=True)  # Ensure the 'data' folder exists
 @app.route('/', methods=['GET'])
 def home():
     """Render the homepage with current processed files and keys."""
-    return render_template('index.html', processed_files=file_memory, ocr_keys=ocr_keys)
+    return render_template('index.html', file_memory=file_memory, ocr_keys=ocr_keys)
 
 @app.route('/add_key', methods=['POST'])
 def add_key():
@@ -58,12 +58,12 @@ def process_docs():
     """Send documents to Azure AI Document Intelligence and return analysis"""
     ocr.set_keys(ocr_keys)
     uploaded_files = request.files.getlist('file')
-    print(uploaded_files)
     
     for filename in file_memory:    
         file_path = os.path.join(DATA_DIR, filename)
         content = ocr.process(file_path)
         file_memory[filename] = content
+    print(file_memory)
     return redirect(url_for('home'))
 
 @app.route('/delete_file/<filename>', methods=['POST'])
@@ -73,7 +73,7 @@ def delete_file(filename):
     if filename in file_memory:
         file_memory.pop(filename, None)  # Remove from in-memory storage
     if os.path.exists(file_path):
-        os.remove(file_path)  # Remove file from the 'data' directory
+        os.remove(file_path)  # Remove file from the data directory
     return redirect(url_for('home'))
 
 @app.route('/delete_all', methods=['POST'])
@@ -83,19 +83,20 @@ def delete_all():
     for file in os.listdir(DATA_DIR):
         file_path = os.path.join(DATA_DIR, file)
         if os.path.isfile(file_path):
-            os.remove(file_path)  # Remove all files in the 'data' directory
+            os.remove(file_path)  # Remove all files in the data directory
     return redirect(url_for('home'))
 
 @app.route('/combine_all', methods=['GET'])
 def combine_all():
     """Generate and serve the CSV file for download."""
+    normalized_keys = ocr.required_keys
     si = StringIO()
     csv_writer = csv.writer(si)
-    csv_writer.writerow(['Filename'] + ocr_keys)  # Header row includes all keys
-
-    for filename, rows in file_memory.items():
-        for row in rows:
-            csv_writer.writerow([filename] + [row.get(key, '') for key in ocr_keys])
+    csv_writer.writerow(normalized_keys)  # Header row includes all keys
+    print(file_memory)
+    for doc_data in file_memory.values():
+        for chunk in doc_data: 
+            csv_writer.writerow([chunk.get(key, '') for key in normalized_keys])
 
     # Prepare the CSV response
     output = make_response(si.getvalue())

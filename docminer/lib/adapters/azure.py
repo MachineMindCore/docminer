@@ -40,11 +40,10 @@ class AzureOCRAdapter:
             file_path: The uploaded file path.
 
         Returns:
-            dict: A dictionary containing extracted data for the required keys.
+            dict: A dictionary containing extracted data for the document,
+                where the values are lists of dictionaries (one per page).
         """
         try:
-            #file_content = file.read()
-            #encoded_content = base64.b64encode(file).decode("utf-8")
             with open(file_path, "rb") as doc:
                 poller = self.client.begin_analyze_document(
                     "prebuilt-document",
@@ -52,23 +51,31 @@ class AzureOCRAdapter:
                 )
             result = poller.result()
 
-            # Initialize the result dictionary
-            extracted_data = {key: None for key in self.required_keys}
+            # Initialize the result list for the document
+            extracted_data = []
 
-            # Extract key-value pairs
-            for kv_pair in result.key_value_pairs:
-                if kv_pair.key and kv_pair.value:
-                    key = normalize_key(kv_pair.key.content)
-                    value = normalize_key(kv_pair.value.content)
-                    if key in self.required_keys:
-                        extracted_data[key] = value
-                        print(key, value)
+            # Iterate through pages in the document
+            for page in result.pages:
+                # Extract key-value pairs for this page
+                page_data = dict.fromkeys(self.required_keys)
+                for kv_pair in result.key_value_pairs:
+                    if kv_pair.key and kv_pair.value and kv_pair.key.bounding_regions:
+                        # Check if the key-value pair belongs to the current page
+                        if kv_pair.key.bounding_regions[0].page_number == page.page_number:
+                            key = kv_pair.key.content.strip()
+                            key_normal = normalize_key(key)
+                            value = kv_pair.value.content.strip()
+
+                            if key_normal in self.required_keys:
+                                page_data[key_normal] = value
+                extracted_data.append(page_data)
 
             return extracted_data
 
         except Exception as e:
-            print(f"Error with Base64 processing: {e}")
-            return dict()
+            print(f"Error processing document: {e}")
+            return []
+
 
 
 

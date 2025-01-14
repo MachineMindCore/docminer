@@ -84,7 +84,7 @@
 
         <!-- Accordion for Processed Files -->
         <div class="accordion" id="fileAccordion">
-            {% for filename, rows in processed_files.items() %}
+            {% for filename, data in file_memory.items() %}
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center" id="heading{{ loop.index }}">
                     <h2 class="mb-0 d-flex align-items-center">
@@ -101,17 +101,25 @@
                 </div>
                 <div id="collapse{{ loop.index }}" class="collapse" aria-labelledby="heading{{ loop.index }}" data-parent="#fileAccordion">
                     <div class="card-body">
-                        {% for key, value in rows.items() %}
-                        <div class="form-group row align-items-center">
-                            <label class="col-sm-2 col-form-label"><strong>{{ key }}</strong></label>
-                            <div class="col-sm-10">
-                                <input type="text" class="form-control" value="{{ value }}" readonly>
+                        {% for chunk in data %}
+                        <div class="card mb-3">
+                            <div class="card-header">
+                                <h5 class="mb-0">Chunk {{ loop.index }}</h5>
+                            </div>
+                            <div class="card-body">
+                                {% for key, value in chunk.items() %}
+                                <div class="form-group row align-items-center">
+                                    <label class="col-sm-2 col-form-label"><strong>{{ key }}</strong></label>
+                                    <div class="col-sm-10">
+                                        <input type="text" class="form-control editable-input" value="{{ value }}">
+                                    </div>
+                                </div>
+                                {% endfor %}
                             </div>
                         </div>
                         {% endfor %}
                     </div>
                 </div>
-            </div>
             {% endfor %}
         </div>
     </div>
