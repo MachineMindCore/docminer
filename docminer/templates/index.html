@@ -124,6 +124,15 @@
         </div>
     </div>
 
+    <footer style="position: fixed; bottom: 10px; left: 10px;">
+        <p style="margin: 0;">Input examples:</p>
+        <ul class="list-unstyled" style="margin: 0;">
+            <li><a href="{{ url_for('static', filename='examples/test-report.pdf') }}" target="_blank">Doc example 1</a></li>
+            <li><a href="{{ url_for('static', filename='examples/test-recibos.pdf') }}" target="_blank">Doc example 2</a></li>
+        </ul>
+    </footer>
+    
+
     <script>
         document.getElementById('addKeyBtn').addEventListener('click', function () {
             const newKey =
