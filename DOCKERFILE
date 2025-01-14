@@ -4,23 +4,17 @@ FROM python:3.9-slim
 # Set the working directory inside the container
 WORKDIR /app
 
-# Copy the requirements file into the container
-COPY requirements.txt .
+# Copy the entire project into the container
+COPY . /app
 
 # Install the required Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the entire project into the container
-COPY . /app
-
 # Expose the default Flask port inside the container
 EXPOSE 5000
 
-# Set environment variables for Flask
-ENV FLASK_APP=docminer.app:app
+# Define environment variable
+ENV FLASK_APP="docminer/app.py"
 
-ENV FLASK_RUN_HOST=0.0.0.0 
-ENV FLASK_ENV=development  
-
-# Start the Flask application
-CMD ["flask", "run"]
+# Run the application
+CMD ["python", "docminer/app.py"]
