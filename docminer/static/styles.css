@@ -1,0 +1,19 @@
+.container {
+    max-width: 800px;
+    margin: auto;
+}
+
+.accordion .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.delete-cross {
+    color: red;
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+.delete-cross:hover {
+    color: darkred;
+}

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DataMiner</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet"> <!-- Font Awesome -->
+    <link href="https://bootswatch.com/4/darkly/bootstrap.min.css" rel="stylesheet"> <!-- Darkly Theme -->
+    <style>
+        hr {
+            border-color: white;
+        }
+        .delete-cross {
+            color: red;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+        .delete-cross:hover {
+            color: darkred;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="my-4">DataMiner</h1>
+
+        <!-- Upload and Delete All Buttons -->
+        <div class="mb-4 d-flex justify-content-between">
+            <!-- Upload and Process Buttons Group -->
+            <div class="input-group" style="width: auto;">
+                <!-- Upload Button -->
+                <form method="post" action="{{ url_for('upload_docs') }}" enctype="multipart/form-data">
+                    <label for="fileInput" class="btn btn-primary mb-0">Upload</label>
+                    <input type="file" class="form-control-file d-none" id="fileInput" name="file" multiple onchange="this.form.submit()">
+                </form>
+                <!-- Process Button -->
+                <form method="post" action="{{ url_for('process_docs') }}">
+                    <button type="submit" class="btn btn-success ml-2">Process</button>
+                </form>
+            </div>
+        
+            <!-- Delete All and Combine Buttons -->
+            <div class="input-group" style="width: auto;">
+                <form method="post" action="{{ url_for('delete_all') }}">
+                    <button type="submit" class="btn btn-danger btn-sm mr-2">Delete All</button>
+                </form>
+                <form method="get" action="{{ url_for('combine_all') }}">
+                    <button id="combine-all-btn" class="btn btn-success btn-sm">Combine All</button>
+                </form>
+            </div>
+        </div>
+        
+
+        <!-- Key Editor Section -->
+        <div class="mb-4 d-flex align-items-center">
+            <div class="input-group" style="width: 40%;">
+                <input type="text" id="newKeyInput" class="form-control" placeholder="Enter new key">
+                <div class="input-group-append">
+                    <button id="addKeyBtn" class="btn btn-primary">Add Key</button>
+                </div>
+            </div>
+            <div class="ml-3">
+                <div class="dropdown">
+                    <button class="btn btn-secondary dropdown-toggle" type="button" id="keyDropdownBtn" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        View Keys
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="keyDropdownBtn">
+                        <div id="keyList" class="px-3">
+                            {% for key in ocr_keys %}
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span>{{ key }}</span>
+                                <span class="delete-cross" data-key="{{ key }}">&times;</span>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Horizontal Line -->
+        <hr>
+
+        <!-- Accordion for Processed Files -->
+        <div class="accordion" id="fileAccordion">
+            {% for filename, rows in processed_files.items() %}
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center" id="heading{{ loop.index }}">
+                    <h2 class="mb-0 d-flex align-items-center">
+                        <span class="badge badge-secondary mr-3">{{ '%03d' % loop.index }}</span>
+                        <button class="btn btn-link text-left" type="button" data-toggle="collapse" data-target="#collapse{{ loop.index }}" aria-expanded="true" aria-controls="collapse{{ loop.index }}">
+                            {{ filename }}
+                        </button>
+                    </h2>
+                    <form method="post" action="{{ url_for('delete_file', filename=filename) }}" style="display:inline;">
+                        <button type="submit" class="btn btn-danger btn-sm">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </form>
+                </div>
+                <div id="collapse{{ loop.index }}" class="collapse" aria-labelledby="heading{{ loop.index }}" data-parent="#fileAccordion">
+                    <div class="card-body">
+                        {% for key, value in rows.items() %}
+                        <div class="form-group row align-items-center">
+                            <label class="col-sm-2 col-form-label"><strong>{{ key }}</strong></label>
+                            <div class="col-sm-10">
+                                <input type="text" class="form-control" value="{{ value }}" readonly>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('addKeyBtn').addEventListener('click', function () {
+            const newKey =
+            document.getElementById('newKeyInput').value.trim(); // Get and trim input
+            if (newKey) {
+                fetch('/add_key', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: `new_key=${encodeURIComponent(newKey)}`
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('Failed to add key');
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === 'success') {
+                        document.getElementById('newKeyInput').value = ''; // Clear input
+                        location.reload(); // Reload page to show updated keys
+                    } else {
+                        alert(data.message || 'Error: Could not add key.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error adding key:', error);
+                    alert('Error: Unable to add key. Please try again.');
+                });
+            } else {
+                alert('Please enter a key before adding.');
+            }
+        });
+
+        // Delete Key
+        document.querySelectorAll('.delete-cross').forEach(span => {
+            span.addEventListener('click', function () {
+                const key = this.dataset.key;
+                fetch(`/delete_key/${encodeURIComponent(key)}`, { method: 'POST' })
+                .then(response => {
+                    if (!response.ok) throw new Error('Failed to delete key');
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.status === 'success') location.reload(); // Reload to update key list
+                })
+                .catch(error => {
+                    console.error('Error deleting key:', error);
+                    alert('Error: Unable to delete key. Please try again.');
+                });
+            });
+        });
+    </script>
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
