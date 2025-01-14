@@ -18,6 +18,7 @@ EXPOSE 5000
 
 # Set environment variables for Flask
 ENV FLASK_APP=docminer.app:app
+
 ENV FLASK_RUN_HOST=0.0.0.0 
 ENV FLASK_ENV=development  
 
