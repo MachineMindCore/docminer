@@ -17,9 +17,6 @@ class AzureOCRAdapter:
     def __init__(self):
         """
         Initialize the AzureOCRAdapter with credentials and required keys.
-
-        Args:
-            required_keys (list): A list of keys to extract from the document.
         """
         self.endpoint = os.getenv("AZURE_FORM_RECOGNIZER_ENDPOINT")
         self.api_key = os.getenv("AZURE_FORM_RECOGNIZER_KEY_A")
@@ -40,8 +37,7 @@ class AzureOCRAdapter:
             file_path: The uploaded file path.
 
         Returns:
-            dict: A dictionary containing extracted data for the document,
-                where the values are lists of dictionaries (one per page).
+            dict: List of dictionaries by chunk
         """
         try:
             with open(file_path, "rb") as doc:
