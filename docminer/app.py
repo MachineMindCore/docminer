@@ -9,7 +9,6 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = 'supersecretkey'
 
 # In-memory storage for processed file metadata and OCR keys
 file_memory = {}
